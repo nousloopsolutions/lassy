@@ -1,0 +1,78 @@
+# LASSY — Local Agent Stack
+
+LASSY is a portable, free-first agent workstation that gives the owner one
+command-line lifecycle interface for local coding, browser automation, files,
+terminals, and task execution. It configures, launches, diagnoses, repairs,
+updates, rolls back, and verifies the approved local-first agent stack.
+
+## Release stage
+
+**Pre-release / foundation.** This repository is at Task 1 of the planned
+release sequence: repository foundation and engineering contracts. The package
+metadata, design contract, and contributor rules are in place. No installer,
+preflight, or service lifecycle is implemented yet. See
+[`docs/design-contract.md`](docs/design-contract.md) for the full design and
+the release sequence.
+
+## Supported profiles
+
+Release 1 targets three deployment profiles:
+
+| Profile | Target host | Inference |
+|---|---|---|
+| `windows-gpu-host` | Windows 11 with a supported NVIDIA GPU (e.g. RTX 4090 Laptop GPU) | Local Ollama with NVIDIA acceleration |
+| `windows-client` | Additional Windows PCs | Authenticated gateway to the GPU host; local Ollama optional |
+| `macos-intel-client` | Intel i9 MacBook Pro, macOS Sonoma 14+ | Authenticated gateway by default; local Ollama CPU-only diagnostic fallback |
+
+Ollama binds to loopback on every profile. Remote clients reach the primary
+GPU host only through an authenticated gateway; raw Ollama port `11434` is
+never exposed to the LAN or public internet.
+
+## Non-goals (Release 1)
+
+- No custom keyword router or second chat UI. Agent Canvas is the command
+  surface.
+- No unrestricted desktop-control API, generic command endpoint, or FastAPI
+  service.
+- No automatic GPU driver installation, firewall changes, or large model
+  downloads.
+- No committed secrets, model weights, browser profiles, conversation stores,
+  screenshots, or machine-specific absolute paths.
+- No license is added until the repository owner explicitly chooses one.
+
+## Tech stack
+
+Python 3.12, [uv](https://docs.astral.sh/uv/), Pydantic 2, PyYAML, httpx,
+pytest, Ruff, PowerShell 7, Bash, Node.js 22+, Agent Canvas, Ollama,
+Browser Use, Cline, optional LiteLLM, and GitHub Actions.
+
+## Developer commands
+
+```bash
+# Install dependencies (pinned, with dev extras)
+uv sync --all-extras --dev
+
+# Lint
+uv run ruff check .
+
+# Run the full test suite
+uv run pytest -q
+
+# Run unit tests only
+uv run pytest tests/unit -q
+```
+
+Dependencies are pinned and `uv.lock` is committed. Use `uv sync --locked` in
+CI to reject drift.
+
+## Documentation
+
+- [Design contract](docs/design-contract.md) — approved architecture, security
+  boundaries, repository layout, and definition of done.
+- [Devin environment](docs/devin-environment.md) — Linux blueprint used by the
+  agent that builds this repository.
+
+## Contributing
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md). One task per pull request, tests
+before review, no committed host data, and no merge by an agent.

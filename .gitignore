@@ -1,0 +1,15 @@
+.venv/
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+*.py[cod]
+.coverage
+htmlcov/
+.env
+.env.*
+!.env.example
+runtime/
+reports/private/
+artifacts/private/
+*.pid
+*.log
