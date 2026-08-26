@@ -26,6 +26,21 @@ if (-not (Test-Path -LiteralPath $python -PathType Leaf)) {
     & $uv venv $venv --python 3.12
     if ($LASTEXITCODE -ne 0) { throw "Failed to create the managed LASSY environment." }
 }
+
+$existingTask = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+if ($null -ne $existingTask) {
+    Stop-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+    $deadline = (Get-Date).AddSeconds(15)
+    do {
+        $ownedProcesses = Get-CimInstance Win32_Process -Filter "Name = 'lassy.exe'" |
+            Where-Object { $_.ExecutablePath -eq $lassy }
+        if (-not $ownedProcesses) { break }
+        Start-Sleep -Milliseconds 250
+    } while ((Get-Date) -lt $deadline)
+    if ($ownedProcesses) {
+        $ownedProcesses | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
+    }
+}
 & $uv pip install --python $python $resolvedRepo
 if ($LASTEXITCODE -ne 0) { throw "Failed to install LASSY into its managed environment." }
 
