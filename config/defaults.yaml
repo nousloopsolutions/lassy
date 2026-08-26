@@ -1,6 +1,7 @@
 security:
   ollama_bind: "127.0.0.1"
-  allowed_gateway_hosts: []
+  allowed_gateway_hosts:
+    - "llm.nousloop.com"
   browser_domains: []
 
 ollama:
@@ -13,16 +14,16 @@ local_models:
   auto_pull: false
 
 models:
-  local_fast: "hermes3:3b"
-  local_code: "qwen3-coder:30b"
-  local_browser: "gpt-oss:20b"
-  local_vision: "llava"
+  local_fast: "deepseek-coder:6.7b"
+  local_code: "qwen3:30b"
+  local_browser: "qwen3:30b"
+  local_vision: null
   cloud_free: null
   escalation_code: null
   escalation_autonomous: null
 
 components:
-  agent_canvas: false
+  opencode: false
   browser_use: false
   cline: false
   kilo: false

@@ -2,9 +2,12 @@ inference:
   mode: "gateway"
 
 components:
-  agent_canvas: true
+  opencode: true
   browser_use: false
-  cline: true
+  cline: false
   kilo: true
   ollama: false
-  gateway: false
+  gateway: true
+
+gateway:
+  url: "https://llm.nousloop.com/v1"

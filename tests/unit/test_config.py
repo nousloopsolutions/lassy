@@ -27,9 +27,9 @@ def test_windows_gpu_host_defaults_to_local(repo_root: Path) -> None:
     config = load_config(repo_root, "windows-gpu-host", {})
     assert config.inference.mode == "local"
     assert config.components.ollama is True
-    assert config.components.agent_canvas is True
-    assert config.components.browser_use is True
-    assert config.components.cline is True
+    assert config.components.opencode is True
+    assert config.components.browser_use is False
+    assert config.components.cline is False
     assert config.components.gateway is False
 
 
@@ -37,16 +37,18 @@ def test_windows_client_defaults_to_gateway(repo_root: Path) -> None:
     config = load_config(repo_root, "windows-client", {})
     assert config.inference.mode == "gateway"
     assert config.components.ollama is False
-    assert config.components.agent_canvas is True
-    assert config.components.cline is True
+    assert config.components.opencode is True
+    assert config.components.cline is False
+    assert config.components.gateway is True
 
 
 def test_macos_intel_components(repo_root: Path) -> None:
     config = load_config(repo_root, "macos-intel-client", {})
-    assert config.components.agent_canvas is True
-    assert config.components.browser_use is True
-    assert config.components.cline is True
+    assert config.components.opencode is True
+    assert config.components.browser_use is False
+    assert config.components.cline is False
     assert config.components.ollama is False
+    assert config.components.gateway is True
 
 
 # --- Model alias tests ---
@@ -54,10 +56,10 @@ def test_macos_intel_components(repo_root: Path) -> None:
 
 def test_model_aliases_mapped_to_ollama_ids(repo_root: Path) -> None:
     config = load_config(repo_root, "windows-gpu-host", {})
-    assert config.models.local_fast == "hermes3:3b"
-    assert config.models.local_code == "qwen3-coder:30b"
-    assert config.models.local_browser == "gpt-oss:20b"
-    assert config.models.local_vision == "llava"
+    assert config.models.local_fast == "deepseek-coder:6.7b"
+    assert config.models.local_code == "qwen3:30b"
+    assert config.models.local_browser == "qwen3:30b"
+    assert config.models.local_vision is None
 
 
 # --- Env override tests ---
@@ -133,6 +135,30 @@ def test_gateway_host_in_allowlist_accepted(repo_root: Path) -> None:
     )
     assert config.gateway is not None
     assert config.gateway.url == "http://127.0.0.1:4000"
+
+
+def test_remote_gateway_host_from_env_can_be_explicitly_allowed(
+    repo_root: Path,
+) -> None:
+    config = load_config(
+        repo_root,
+        "windows-client",
+        {
+            "NOUS_STACK_GATEWAY_URL": "https://gateway.example.com/v1",
+            "NOUS_STACK_ALLOWED_GATEWAY_HOSTS": "gateway.example.com",
+        },
+    )
+    assert config.gateway is not None
+    assert config.gateway.url == "https://gateway.example.com/v1"
+
+
+def test_gateway_key_without_url_has_actionable_error(repo_root: Path) -> None:
+    with pytest.raises(ValueError, match="requires a configured gateway URL"):
+        load_config(
+            repo_root,
+            "windows-gpu-host",
+            {"NOUS_STACK_GATEWAY_KEY": "secret123"},
+        )
 
 
 # --- Immutability and structural tests ---

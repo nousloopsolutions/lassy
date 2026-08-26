@@ -76,7 +76,7 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "agent_canvas": {"type": "boolean"},
+        "opencode": {"type": "boolean"},
         "browser_use": {"type": "boolean"},
         "cline": {"type": "boolean"},
         "kilo": {"type": "boolean"},

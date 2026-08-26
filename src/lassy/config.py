@@ -34,10 +34,10 @@ class ModelAliases(BaseModel):
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
-    local_fast: str
-    local_code: str
-    local_browser: str
-    local_vision: str
+    local_fast: str | None = None
+    local_code: str | None = None
+    local_browser: str | None = None
+    local_vision: str | None = None
     cloud_free: str | None = None
     escalation_code: str | None = None
     escalation_autonomous: str | None = None
@@ -79,7 +79,7 @@ class ComponentsConfig(BaseModel):
     """Component enable/disable flags per profile."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
-    agent_canvas: bool = False
+    opencode: bool = False
     browser_use: bool = False
     cline: bool = False
     kilo: bool = False
@@ -136,15 +136,25 @@ def _deep_merge(base: dict, override: dict) -> dict:
 
 
 def _apply_env_overrides(merged: dict, env: Mapping[str, str]) -> dict:
-    """Apply the five supported environment-variable overrides."""
+    """Apply supported environment-variable overrides."""
     result = {**merged}
+    if "NOUS_STACK_ALLOWED_GATEWAY_HOSTS" in env:
+        hosts = [
+            host.strip().lower()
+            for host in env["NOUS_STACK_ALLOWED_GATEWAY_HOSTS"].split(",")
+            if host.strip()
+        ]
+        result.setdefault("security", {})
+        result["security"]["allowed_gateway_hosts"] = hosts
     if "NOUS_STACK_GATEWAY_URL" in env:
         if result.get("gateway") is None:
             result["gateway"] = {}
         result["gateway"]["url"] = env["NOUS_STACK_GATEWAY_URL"]
     if "NOUS_STACK_GATEWAY_KEY" in env:
-        if result.get("gateway") is None:
-            result["gateway"] = {}
+        if result.get("gateway") is None or not result["gateway"].get("url"):
+            raise ValueError(
+                "NOUS_STACK_GATEWAY_KEY requires a configured gateway URL"
+            )
         result["gateway"]["key"] = env["NOUS_STACK_GATEWAY_KEY"]
     if "NOUS_STACK_WORKSPACE_ROOT" in env:
         result["workspace_root"] = env["NOUS_STACK_WORKSPACE_ROOT"]
