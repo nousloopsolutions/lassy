@@ -7,10 +7,10 @@ updates, rolls back, and verifies the approved local-first agent stack.
 
 ## Release stage
 
-**Pre-release / foundation.** This repository is at Task 1 of the planned
-release sequence: repository foundation and engineering contracts. The package
-metadata, design contract, and contributor rules are in place. No installer,
-preflight, or service lifecycle is implemented yet. See
+**Pre-release / restricted runner.** The repository now contains the
+configuration foundation and an outbound-only remote runner for signed,
+allowlisted jobs. It is not a general remote shell and is not yet a complete
+installer or service lifecycle. See
 [`docs/design-contract.md`](docs/design-contract.md) for the full design and
 the release sequence.
 
@@ -71,6 +71,8 @@ CI to reject drift.
   boundaries, repository layout, and definition of done.
 - [Devin environment](docs/devin-environment.md) — Linux blueprint used by the
   agent that builds this repository.
+- [Remote runner](docs/remote-runner.md) — signed job protocol, allowlist,
+  recovery behavior, and operating instructions.
 
 ## Contributing
 

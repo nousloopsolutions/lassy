@@ -1,0 +1,9 @@
+workspaces:
+  lassy:
+    path: "REPLACE_WITH_ABSOLUTE_PATH"
+    allowed_jobs:
+      - health
+      - repo_status
+      - repo_test
+      - repo_lint
+      - opencode_review

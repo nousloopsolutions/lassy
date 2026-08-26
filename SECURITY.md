@@ -49,6 +49,19 @@ Destructive file operations, credential access, application control, and
 arbitrary commands are not exposed through a generic desktop endpoint. No
 unrestricted desktop-control API or FastAPI router exists in Release 1.
 
+### Remote runner
+
+The runner initiates outbound HTTPS requests and does not listen on a network
+port. A 32-byte-or-longer per-runner secret authenticates requests and signs
+job envelopes and results. Jobs expire, carry a nonce, and are rejected after
+their ID has been seen. Remote payloads choose a registered workspace name,
+never a filesystem path or command string.
+
+Only fixed job types are supported. OpenCode review runs with edits, shell,
+external directories, network tools, plugins, and subagents denied. Dependency
+changes, code edits, deployment, restarts, Git pushes, secret access, and
+destructive operations are not runner capabilities in this release.
+
 ## Secrets
 
 - Secrets never enter Git. Repository files contain only environment-variable
