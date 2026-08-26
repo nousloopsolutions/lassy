@@ -1,0 +1,58 @@
+name: LASSY verification
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - "codex/**"
+      - "devin/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lassy-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Python tests and lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+      - name: Set up uv
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+      - name: Lint
+        run: uv run --extra dev ruff check src tests
+      - name: Test
+        run: uv run --extra dev pytest -q
+
+  cloudflare-control:
+    name: Cloudflare control tests and dry run
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: cloudflare/lassy-control
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: cloudflare/lassy-control/package-lock.json
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Typecheck and test
+        run: npm run check
+      - name: Validate Worker bundle
+        run: npm run deploy:dry
