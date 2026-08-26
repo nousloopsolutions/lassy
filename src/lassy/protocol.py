@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -43,7 +43,7 @@ class JobEnvelope(BaseModel):
         expected = sign_bytes(self.signing_payload(), secret)
         if not hmac.compare_digest(self.signature, expected):
             raise ValueError("job signature is invalid")
-        if self.issued_at > current:
+        if self.issued_at > current + timedelta(seconds=30):
             raise ValueError("job was issued in the future")
         if self.expires_at <= current:
             raise ValueError("job has expired")

@@ -22,8 +22,10 @@ $venv = Join-Path $resolvedDataDir "venv"
 $python = Join-Path $venv "Scripts\python.exe"
 $lassy = Join-Path $venv "Scripts\lassy.exe"
 
-& $uv venv $venv --python 3.12
-if ($LASTEXITCODE -ne 0) { throw "Failed to create the managed LASSY environment." }
+if (-not (Test-Path -LiteralPath $python -PathType Leaf)) {
+    & $uv venv $venv --python 3.12
+    if ($LASTEXITCODE -ne 0) { throw "Failed to create the managed LASSY environment." }
+}
 & $uv pip install --python $python $resolvedRepo
 if ($LASTEXITCODE -ne 0) { throw "Failed to install LASSY into its managed environment." }
 
