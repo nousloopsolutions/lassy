@@ -20,7 +20,7 @@ Release 1 targets three deployment profiles:
 
 | Profile | Target host | Inference |
 |---|---|---|
-| `windows-gpu-host` | Windows 11 with a supported NVIDIA GPU (e.g. RTX 4090 Laptop GPU) | Local Ollama with NVIDIA acceleration |
+| `windows-gpu-host` | Windows 11 with a supported NVIDIA GPU (the primary host currently has an RTX 4090) | Local Ollama with NVIDIA acceleration |
 | `windows-client` | Additional Windows PCs | Authenticated gateway to the GPU host; local Ollama optional |
 | `macos-intel-client` | Intel i9 MacBook Pro, macOS Sonoma 14+ | Authenticated gateway by default; local Ollama CPU-only diagnostic fallback |
 
@@ -30,8 +30,8 @@ never exposed to the LAN or public internet.
 
 ## Non-goals (Release 1)
 
-- No custom keyword router or second chat UI. Agent Canvas is the command
-  surface.
+- No custom keyword router or unrestricted second chat UI. OpenCode and
+  Wonderland Gateway are the initial command surfaces.
 - No unrestricted desktop-control API, generic command endpoint, or FastAPI
   service.
 - No automatic GPU driver installation, firewall changes, or large model
@@ -43,8 +43,8 @@ never exposed to the LAN or public internet.
 ## Tech stack
 
 Python 3.12, [uv](https://docs.astral.sh/uv/), Pydantic 2, PyYAML, httpx,
-pytest, Ruff, PowerShell 7, Bash, Node.js 22+, Agent Canvas, Ollama,
-Browser Use, Cline, optional LiteLLM, and GitHub Actions.
+pytest, Ruff, PowerShell 7, Bash, Node.js 22+, OpenCode, Ollama,
+Browser Use, optional Cline, and GitHub Actions.
 
 ## Developer commands
 

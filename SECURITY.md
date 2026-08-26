@@ -18,9 +18,10 @@ machine reports in your report.
 Ollama binds to `127.0.0.1` (loopback) on every supported profile. Raw Ollama
 port `11434` is **never** exposed to the LAN or the public internet.
 
-Remote clients reach the primary GPU host only through an authenticated
-gateway (LiteLLM, added after the local-only path passes). Clients never
-connect to a raw LAN-exposed Ollama port.
+Remote clients reach the primary GPU host only through the OAuth-protected
+Wonderland Gateway and its authenticated Cloudflare Tunnel path. Clients
+never receive the local proxy credential or connect to a raw LAN-exposed
+Ollama port.
 
 ### Workspace isolation
 
