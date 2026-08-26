@@ -1,0 +1,19 @@
+{
+  "name": "@nousloop/lassy-control",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit && vitest run",
+    "deploy:dry": "wrangler deploy --dry-run",
+    "deploy": "wrangler deploy",
+    "types": "wrangler types"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "1.1.0",
+    "@types/node": "26.3.0",
+    "typescript": "7.0.2",
+    "vitest": "4.1.11",
+    "wrangler": "4.126.0"
+  }
+}
