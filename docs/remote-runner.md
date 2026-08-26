@@ -22,9 +22,10 @@ path, model endpoint, browser-control, deployment, or code-edit job.
 
 Copy `config/workspaces.example.yaml` outside the public checkout. Replace the
 placeholder with each exact repository root and grant only the job types that
-repository needs. Store the runner secret in the operating-system credential
-facility and inject it as `LASSY_RUNNER_SECRET` when the service starts; never
-put it in YAML, command history, Git, or a desktop shortcut.
+repository needs. On Windows, `lassy runner-secret-set --data-dir <private-dir>`
+stores the credential using current-user DPAPI encryption. The environment
+variable `LASSY_RUNNER_SECRET` remains available for ephemeral/container use;
+never put it in YAML, command history, Git, or a desktop shortcut.
 
 The remaining non-secret settings are:
 
@@ -35,6 +36,12 @@ The remaining non-secret settings are:
 
 `lassy runner-once` performs one poll. `lassy runner` continuously polls and
 sleeps when no job is available.
+
+On the primary Windows host, `scripts/install-runner-task.ps1` creates a
+dedicated managed Python environment and a limited, hidden scheduled task at
+user logon. It puts no secret in the task definition. The matching uninstall
+script removes only the task and intentionally preserves audit and credential
+data for recovery or investigation.
 
 ## Recovery and invariants
 
