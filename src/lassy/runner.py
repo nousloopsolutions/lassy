@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import json
+import ssl
 import time
 from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
+import truststore
 
 from lassy.audit import AuditLog
 from lassy.executor import JobExecutor
@@ -39,7 +41,10 @@ class Runner:
         self.seen_path = data_dir / "seen-jobs.json"
         self.pending_result_path = data_dir / "pending-result.json"
         self.seen_path.parent.mkdir(parents=True, exist_ok=True)
-        self.client = client or httpx.Client(timeout=30)
+        self.client = client or httpx.Client(
+            timeout=30,
+            verify=truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT),
+        )
 
     def run_once(self) -> bool:
         if self._flush_pending_result():
