@@ -1,0 +1,34 @@
+security:
+  ollama_bind: "127.0.0.1"
+  allowed_gateway_hosts: []
+  browser_domains: []
+
+ollama:
+  url: "http://127.0.0.1:11434"
+
+inference:
+  mode: "local"
+
+local_models:
+  auto_pull: false
+
+models:
+  local_fast: "hermes3:3b"
+  local_code: "qwen3-coder:30b"
+  local_browser: "gpt-oss:20b"
+  local_vision: "llava"
+  cloud_free: null
+  escalation_code: null
+  escalation_autonomous: null
+
+components:
+  agent_canvas: false
+  browser_use: false
+  cline: false
+  kilo: false
+  ollama: false
+  gateway: false
+
+gateway: null
+workspace_root: null
+data_dir: null

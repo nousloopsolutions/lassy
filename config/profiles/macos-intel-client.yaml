@@ -1,0 +1,13 @@
+inference:
+  mode: "gateway"
+
+local_models:
+  auto_pull: false
+
+components:
+  agent_canvas: true
+  browser_use: true
+  cline: true
+  kilo: false
+  ollama: false
+  gateway: false

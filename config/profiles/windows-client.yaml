@@ -1,0 +1,10 @@
+inference:
+  mode: "gateway"
+
+components:
+  agent_canvas: true
+  browser_use: false
+  cline: true
+  kilo: true
+  ollama: false
+  gateway: false

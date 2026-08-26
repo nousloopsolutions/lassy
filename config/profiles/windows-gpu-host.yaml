@@ -1,0 +1,10 @@
+inference:
+  mode: "local"
+
+components:
+  agent_canvas: true
+  browser_use: true
+  cline: true
+  kilo: true
+  ollama: true
+  gateway: false
