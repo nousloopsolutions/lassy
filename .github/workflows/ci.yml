@@ -50,6 +50,8 @@ jobs:
           cache-dependency-path: cloudflare/lassy-control/package-lock.json
       - name: Install locked dependencies
         run: npm ci
+      - name: Generate Cloudflare runtime types
+        run: npm run types
       - name: Typecheck and test
         run: npm run check
       - name: Validate Worker bundle
