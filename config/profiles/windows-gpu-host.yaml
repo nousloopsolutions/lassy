@@ -1,0 +1,10 @@
+inference:
+  mode: "local"
+
+components:
+  opencode: true
+  browser_use: false
+  cline: false
+  kilo: true
+  ollama: true
+  gateway: false

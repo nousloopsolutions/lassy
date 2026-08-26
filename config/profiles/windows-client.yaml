@@ -1,0 +1,13 @@
+inference:
+  mode: "gateway"
+
+components:
+  opencode: true
+  browser_use: false
+  cline: false
+  kilo: true
+  ollama: false
+  gateway: true
+
+gateway:
+  url: "https://llm.nousloop.com/v1"

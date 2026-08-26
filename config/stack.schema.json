@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/nousloopsolutions/lassy/config/stack.schema.json",
+  "title": "LASSY Stack Configuration",
+  "description": "Documents the YAML structure for config/defaults.yaml and config/profiles/*.yaml. Runtime validation is performed by Pydantic models in src/lassy/config.py; this schema exists for editor support and documentation.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "security": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ollama_bind": {
+          "type": "string",
+          "description": "Network address Ollama binds to. Must be loopback (127.0.0.1, localhost, or ::1).",
+          "enum": ["127.0.0.1", "localhost", "::1"]
+        },
+        "allowed_gateway_hosts": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Private gateway hosts that remote-client URLs may target in addition to loopback."
+        },
+        "browser_domains": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Allowed domains for browser automation."
+        }
+      }
+    },
+    "ollama": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "url": {
+          "type": "string",
+          "description": "Ollama API URL. Must be loopback.",
+          "format": "uri"
+        }
+      }
+    },
+    "inference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["local", "gateway"],
+          "description": "Whether to use local Ollama or an authenticated gateway."
+        }
+      }
+    },
+    "local_models": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "auto_pull": {
+          "type": "boolean",
+          "description": "Whether to automatically download models. Must be false on macos-intel-client."
+        }
+      }
+    },
+    "models": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "local_fast": {"type": ["string", "null"]},
+        "local_code": {"type": ["string", "null"]},
+        "local_browser": {"type": ["string", "null"]},
+        "local_vision": {"type": ["string", "null"]},
+        "cloud_free": {"type": ["string", "null"]},
+        "escalation_code": {"type": ["string", "null"]},
+        "escalation_autonomous": {"type": ["string", "null"]}
+      }
+    },
+    "components": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "opencode": {"type": "boolean"},
+        "browser_use": {"type": "boolean"},
+        "cline": {"type": "boolean"},
+        "kilo": {"type": "boolean"},
+        "ollama": {"type": "boolean"},
+        "gateway": {"type": "boolean"}
+      }
+    },
+    "gateway": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "url": {"type": "string", "format": "uri"},
+        "key": {"type": ["string", "null"]}
+      }
+    },
+    "workspace_root": {
+      "type": ["string", "null"],
+      "description": "Explicit workspace root for agents. Home-directory-wide access is prohibited."
+    },
+    "data_dir": {
+      "type": ["string", "null"],
+      "description": "Platform-native user-data directory for runtime state."
+    }
+  }
+}
