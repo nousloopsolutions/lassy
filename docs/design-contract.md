@@ -1,12 +1,12 @@
 # LASSY Local Agent Stack — Design Contract
 
 **Status:** Approved direction for detailed implementation planning  
-**Date:** 2026-08-25  
-**Target repository:** existing public GitHub repository `https://github.com/nousloopsolutions/lassy` (currently empty)
+**Date:** 2026-08-26  
+**Target repository:** public GitHub repository `https://github.com/nousloopsolutions/lassy`
 
 ## 1. Objective
 
-Build LASSY: a portable, free-first agent workstation that gives the owner one primary interface for local coding, browser automation, files, terminals, and task execution. The system must run first on the existing Windows 11 RTX 4090 Laptop GPU machine, then install predictably on additional Windows PCs and an Intel i9 MacBook Pro.
+Build LASSY: a portable, free-first agent workstation that gives the owner one primary interface for local coding, browser automation, files, terminals, and task execution. The system must run first on the existing Windows 11 RTX 4090 desktop host, then install predictably on additional Windows PCs and an Intel i9 MacBook Pro.
 
 LASSY must provide a command-line lifecycle experience suitable for non-expert installation and support:
 
@@ -18,25 +18,25 @@ LASSY must provide a command-line lifecycle experience suitable for non-expert i
 - `lassy rollback` for returning to the last healthy version.
 - `lassy start`, `status`, and `stop` for normal operation.
 
-The first release must prove useful work locally before adding a custom orchestrator. It must favor supported product interfaces—Agent Canvas APIs, MCP, ACP, Cline CLI/SDK, and OpenAI-compatible model endpoints—over bespoke glue.
+The first release must prove useful work locally before expanding orchestration. It must favor supported product interfaces—OpenCode, MCP, Cloudflare service bindings, and OpenAI-compatible model endpoints—over bespoke glue.
 
 ## 2. Verified Starting Point
 
-- Primary host: Windows 11, NVIDIA GeForce RTX 4090 Laptop GPU, 16,376 MiB VRAM.
+- Primary host: Windows 11, NVIDIA GeForce RTX 4090, 24,564 MiB VRAM.
 - Ollama is installed and running at `http://127.0.0.1:11434`.
-- Installed Ollama models include `gpt-oss:20b`, `qwen3-coder:30b`, `qwen2.5-coder:32b`, `hermes3:8b`, `hermes3:3b`, `llava`, and `nomic-embed-text`.
-- Browser Use 0.13.8 is installed in an isolated Python 3.12 environment and passed a real Chromium smoke test with `gpt-oss:20b` at 16,384-token context.
-- Agent Canvas 1.15.0 is globally installed.
+- Installed Ollama models include `qwen3:30b`, `deepseek-coder:6.7b`, and `nomic-embed-text`.
+- Browser automation availability must be discovered by `lassy doctor`; it is not assumed.
+- OpenCode 1.2.27 is installed. Agent Canvas is not installed.
 - Kilo Code is installed in VS Code.
 - Atomic Chat 2.0.19 is installed; its own local model store is empty.
 - Cline and Aider are not installed.
-- `C:\Users\hovla\ai-stack` does not exist; no earlier megaplan implementation should be assumed.
+- Wonderland Gateway already provides the authenticated Cloudflare control plane, and `llm.nousloop.com` reaches a loopback-only local model proxy through a named Cloudflare Tunnel.
 
 ## 3. Architectural Decision
 
 ### 3.1 Control surface
 
-Agent Canvas is the primary browser-based command surface. It owns conversations, workspace selection, terminals, LLM profiles, MCP connections, automations, and supported ACP agents.
+Wonderland Gateway is the authenticated remote control plane. OpenCode is the initial local coding surface. LASSY adds a narrow job queue and runner for explicit job types; it does not expose a terminal or general command API.
 
 Atomic Chat remains a local chat and model-management interface. It is not the service supervisor for an Ollama-based deployment. Cline and Kilo remain IDE-native specialist interfaces.
 
@@ -47,9 +47,9 @@ Use integrations in this order:
 1. OpenAI-compatible model API.
 2. MCP for narrowly scoped tools such as browser automation.
 3. ACP for compatible agent processes.
-4. Agent Canvas conversation and settings APIs.
-5. Cline CLI or SDK for programmatic coding tasks.
-6. A custom policy/job service only if the preceding interfaces leave a measured gap.
+4. Cloudflare Durable Objects or Workflows for durable job state and approval waits.
+5. OpenCode or another approved agent's documented non-interactive interface.
+6. A narrow custom policy/job service only for the measured remote-execution gap.
 
 Do not implement keyword-based routing in the first release.
 
@@ -60,15 +60,15 @@ The system has three deployment profiles:
 #### `windows-gpu-host`
 
 - Runs Ollama natively with NVIDIA acceleration.
-- Runs Agent Canvas natively for the first release.
+- Runs OpenCode natively for the first release.
 - Runs Browser Use with a dedicated automation browser profile.
 - Runs Cline CLI/extension and Kilo Code.
-- May run LiteLLM after the local-only path passes.
-- Accepts remote model requests only through an authenticated gateway on an approved private network.
+- Uses the existing loopback-only model proxy and named Cloudflare Tunnel.
+- Accepts remote model and job requests only through Wonderland Gateway authentication and the authenticated runner protocol.
 
 #### `windows-client`
 
-- Runs Agent Canvas, Cline, Kilo, and optionally Browser Use locally.
+- Runs OpenCode, Kilo, and optionally Cline and Browser Use locally.
 - Uses a local Ollama instance when hardware passes the model benchmark.
 - Otherwise uses the authenticated gateway on the primary GPU host.
 - Never connects to a raw LAN-exposed Ollama port.
@@ -76,7 +76,7 @@ The system has three deployment profiles:
 #### `macos-intel-client`
 
 - Requires macOS Sonoma 14 or newer.
-- Runs Agent Canvas, Cline, and Browser Use natively when their preflight checks pass.
+- Runs OpenCode and optional coding/browser tools natively when their preflight checks pass.
 - Uses the authenticated primary-host gateway by default.
 - Ollama on x86 macOS is CPU-only; it is limited to small models and diagnostic/offline fallback workloads.
 - The profile must not download 20B–32B models automatically.
@@ -85,13 +85,14 @@ The system has three deployment profiles:
 
 | Component | Release role |
 |---|---|
-| Agent Canvas | Primary command UI and conversation/workspace manager |
+| Wonderland Gateway | OAuth-protected remote MCP control plane |
+| OpenCode | Initial local coding worker and interactive surface |
 | Ollama | Primary local inference runtime on capable hosts |
 | Atomic Chat | Human-facing local chat/model UI; optional separate inference source |
 | Browser Use | Dedicated browser automation tool exposed through MCP or a narrow adapter |
 | Cline | Controlled coding worker; interactive approval mode and separately configured headless mode |
 | Kilo Code | Optional interactive IDE worker and free-model access |
-| LiteLLM | Stage-two authenticated gateway and logical model alias layer |
+| Existing local proxy + Cloudflare Tunnel | Authenticated model transport; never exposed directly to clients |
 | Codex | Explicit high-capability escalation and review tier |
 | Devin | Long-running implementation/escalation tier; also builds this repository |
 | OpenRouter/Kilo free models | Optional free cloud fallback with explicit disclosure |
@@ -110,15 +111,15 @@ Consumers request logical capabilities instead of hard-coding provider model nam
 - `escalation-code`: Codex or another approved high-capability coding agent.
 - `escalation-autonomous`: Devin for long-running work.
 
-Before LiteLLM is introduced, the configuration resolver maps these aliases directly to Ollama model IDs. After LiteLLM is introduced, the aliases become authenticated gateway model names without changing clients.
+The configuration resolver maps aliases to local Ollama model IDs on the host and to stable Wonderland Gateway capabilities for remote clients. Clients do not receive the local proxy credential.
 
-Context length is a per-capability setting. The implementation must not set a global 16K context and call the problem solved. The preflight/benchmark process records requested context, allocated context, CPU/GPU split from `ollama ps`, cold-start time, warm latency, and task success. Agent Canvas requires a larger prompt budget than the already-passing Browser Use smoke test, so model and context must be chosen together.
+Context length is a per-capability setting. The implementation must not set a global 16K context and call the problem solved. The preflight/benchmark process records requested context, allocated context, CPU/GPU split from `ollama ps`, cold-start time, warm latency, and task success. Coding agents generally require a larger prompt budget than lightweight tool smoke tests, so model and context must be chosen together.
 
 ## 6. Security and Trust Boundaries
 
 - Ollama binds to loopback by default.
-- Remote clients connect through LiteLLM or a later gateway with authentication; they never access Ollama directly.
-- Remote access is limited to a user-approved private overlay or LAN boundary. Public internet exposure is out of scope.
+- Remote clients connect through the existing OAuth-protected Wonderland Gateway; they never access Ollama directly.
+- The local runner uses outbound authenticated requests. No inbound shell, runner port, or raw model port is exposed to the LAN or public internet.
 - Every agent receives explicit workspace roots. Home-directory-wide write access is prohibited by default.
 - Browser automation uses a dedicated profile, not the everyday Chrome profile.
 - Browser tasks support allowed-domain restrictions.
@@ -240,12 +241,12 @@ Update checks are allowed by default and transmit only the installed LASSY versi
 
 1. Repository foundation and configuration contracts.
 2. Cross-platform preflight and machine report.
-3. Windows GPU-host bootstrap and local-only Agent Canvas/Ollama path.
+3. Windows GPU-host bootstrap and local-only OpenCode/Ollama path.
 4. Browser Use MCP integration and end-to-end local task.
 5. Cline interactive and headless profiles.
 6. Verification suite and Windows CI.
 7. Intel Mac client bootstrap and manual/GitHub Intel validation.
-8. Authenticated LiteLLM gateway and Windows client profile.
+8. Wonderland Gateway job tools and authenticated Windows client profile.
 9. Signed release bundle and installation guide.
 10. Capability resolver, versioned installer, classified repair engine, and signed staged updater.
 11. Evidence-based decision on whether a custom job/policy service is justified.
@@ -255,11 +256,11 @@ Update checks are allowed by default and transmit only the installed LASSY versi
 Release 1 is complete when:
 
 - A clean Windows 11 machine can run the bootstrap, configure a profile, launch enabled services, and produce a passing machine-readable verification report.
-- Agent Canvas can use an approved Ollama model and complete a file task in an isolated workspace.
-- Agent Canvas or Cline can invoke Browser Use against an allowed test domain and save a result artifact.
+- OpenCode can use an approved Ollama model and complete a file task in an isolated workspace.
+- OpenCode or Cline can invoke Browser Use against an allowed test domain and save a result artifact.
 - Cline works interactively with approval and separately in a restricted headless test workspace.
 - A second Windows client can use the authenticated primary-host model gateway without raw Ollama exposure.
-- The Intel i9 Mac can install the client profile, run Agent Canvas/Cline/Browser Use checks, and use the primary gateway.
+- The Intel i9 Mac can install the client profile, run OpenCode and optional coding/browser checks, and use the primary gateway.
 - Local-only mode makes no cloud model calls.
 - Cloud fallback requires an explicit profile setting and is visible in the audit report.
 - CI passes on Ubuntu and Windows; the Intel macOS workflow passes manually or on its scheduled release gate.
@@ -274,7 +275,7 @@ Release 1 is complete when:
 
 - Devin environment configuration: https://docs.devin.ai/onboard-devin/environment
 - Devin declarative blueprints: https://docs.devin.ai/onboard-devin/environment/blueprints
-- Agent Canvas overview: https://github.com/OpenHands/docs/blob/main/openhands/usage/agent-canvas/overview.mdx
+- OpenCode Cloudflare setup: https://developers.cloudflare.com/agent-setup/opencode/
 - OpenHands local-model guidance: https://github.com/OpenHands/docs/blob/main/openhands/usage/llms/local-llms.mdx
 - Cline CLI: https://github.com/cline/cline/blob/main/apps/cli/README.md
 - Cline configuration: https://docs.cline.bot/getting-started/config
