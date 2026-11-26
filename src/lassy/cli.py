@@ -15,9 +15,7 @@ def version() -> None:
     typer.echo(__version__)
 
 
-def _build_runner(
-    control_url: str, runner_id: str, workspace_config: Path, data_dir: Path
-):
+def _build_runner(control_url: str, runner_id: str, workspace_config: Path, data_dir: Path):
     from lassy.runner import Runner
 
     secret = os.environ.get("LASSY_RUNNER_SECRET")
@@ -60,20 +58,32 @@ def runner_loop(
     poll_seconds: float = typer.Option(5.0, min=1.0, max=60.0),
 ) -> None:
     """Continuously poll the control plane using outbound HTTPS only."""
-    _build_runner(control_url, runner_id, workspace_config, data_dir).run_forever(
-        poll_seconds
-    )
+    _build_runner(control_url, runner_id, workspace_config, data_dir).run_forever(poll_seconds)
 
 
 @app.command("runner-secret-set")
-def runner_secret_set(data_dir: Path = typer.Option(..., file_okay=False)) -> None:
+def runner_secret_set(
+    data_dir: Path = typer.Option(..., file_okay=False),
+    stdin: bool = typer.Option(
+        False,
+        "--stdin",
+        help="Read one line from stdin instead of prompting (for an automated custodian).",
+    ),
+) -> None:
     """Store the runner credential encrypted for the current Windows user."""
+    import sys
+
     from lassy.secret_store import RunnerSecretStore
 
-    first = getpass("Runner secret: ")
-    second = getpass("Confirm runner secret: ")
-    if first != second:
-        raise typer.BadParameter("runner secret confirmation does not match")
+    if stdin:
+        first = sys.stdin.readline().rstrip("\r\n")
+        if len(first) < 32:
+            raise typer.BadParameter("runner secret from stdin must be at least 32 characters")
+    else:
+        first = getpass("Runner secret: ")
+        second = getpass("Confirm runner secret: ")
+        if first != second:
+            raise typer.BadParameter("runner secret confirmation does not match")
     secret_fingerprint = RunnerSecretStore(data_dir).set(first)
     typer.echo(f"credential stored (fingerprint {secret_fingerprint})")
 

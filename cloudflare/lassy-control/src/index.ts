@@ -240,11 +240,27 @@ export default {
     }
     const queue = env.JOBS.getByName("primary");
     if (url.pathname.startsWith("/runner/")) {
-      if (!authorized(request.headers.get("Authorization"), env.LASSY_RUNNER_SECRET, true)) {
+      // Per-runner secrets: the runner_id in the body picks the secret, so one runner's secret can't claim
+      // or finish another runner's jobs. Runners without their own secret keep the shared one until migrated.
+      const raw = await request.text();
+      let body: Record<string, unknown>;
+      try {
+        body = JSON.parse(raw || "{}") as Record<string, unknown>;
+      } catch {
+        return json({ error: "invalid_json" }, 400);
+      }
+      const secret = runnerSecret(env, String(body.runner_id ?? ""));
+      if (!secret || !authorized(request.headers.get("Authorization"), secret, true)) {
         return json({ error: "unauthorized" }, 401);
       }
       if (url.pathname === "/runner/claim" && request.method === "POST") {
-        const response = await queue.fetch(new Request("https://internal/claim", request));
+        const response = await queue.fetch(
+          new Request("https://internal/claim", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: raw,
+          }),
+        );
         if (response.status === 204) return response;
         const row = (await response.json()) as JobRow;
         const issuedAt = isoMicros(new Date());
@@ -260,15 +276,14 @@ export default {
         };
         return json({
           ...envelope,
-          signature: await signObject(envelope, env.LASSY_RUNNER_SECRET),
+          signature: await signObject(envelope, secret),
         });
       }
       if (url.pathname === "/runner/result" && request.method === "POST") {
-        const body = await readJson(request);
         const signature = String(body.signature ?? "");
         const unsigned = { ...body };
         delete unsigned.signature;
-        if (!(await verifyObject(unsigned, signature, env.LASSY_RUNNER_SECRET))) {
+        if (!(await verifyObject(unsigned, signature, secret))) {
           return json({ error: "invalid_signature" }, 401);
         }
         return queue.fetch(
@@ -330,6 +345,23 @@ export function canonicalJson(value: unknown): string {
       .join(",")}}`;
   }
   return JSON.stringify(value);
+}
+
+/** Env binding that holds one runner's own secret, e.g. bigg-legion -> LASSY_RUNNER_SECRET__BIGG_LEGION.
+ * Only lowercase ids of [a-z0-9-] get one, so two ids can never map to the same binding. */
+export function runnerSecretName(runnerId: string): string | null {
+  if (!/^[a-z0-9-]{3,64}$/.test(runnerId)) return null;
+  return `LASSY_RUNNER_SECRET__${runnerId.replaceAll("-", "_").toUpperCase()}`;
+}
+
+export function runnerSecret(env: Env, runnerId: string): string | null {
+  if (!RUNNER_RE.test(runnerId)) return null;
+  const name = runnerSecretName(runnerId);
+  const own = name ? (env as unknown as Record<string, unknown>)[name] : undefined;
+  if (typeof own === "string" && own.length >= 32) return own;
+  if (typeof own === "string") return null; // a too-short own secret is a misconfiguration: refuse, don't fall back
+  const shared = env.LASSY_RUNNER_SECRET;
+  return typeof shared === "string" && shared.length >= 32 ? shared : null;
 }
 
 export async function signObject(value: unknown, secret: string): Promise<string> {
