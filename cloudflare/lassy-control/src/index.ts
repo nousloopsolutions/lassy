@@ -242,7 +242,8 @@ export default {
     if (url.pathname.startsWith("/runner/")) {
       // Per-runner secrets: the runner_id in the body picks the secret, so one runner's secret can't claim
       // or finish another runner's jobs. Runners without their own secret keep the shared one until migrated.
-      const raw = await request.text();
+      const raw = await readBounded(request, MAX_BODY);
+      if (raw === null) return json({ error: "request_too_large" }, 413);
       let parsed: unknown;
       try {
         parsed = JSON.parse(raw || "{}");
@@ -253,7 +254,8 @@ export default {
         return json({ error: "invalid_json" }, 400);
       }
       const body = parsed as Record<string, unknown>;
-      const secret = runnerSecret(env, String(body.runner_id ?? ""));
+      if (typeof body.runner_id !== "string") return json({ error: "invalid_runner_id" }, 400);
+      const secret = runnerSecret(env, body.runner_id);
       if (!secret || !authorized(request.headers.get("Authorization"), secret, true)) {
         return json({ error: "unauthorized" }, 401);
       }
@@ -420,6 +422,34 @@ function publicJob(row: JobRow) {
 
 function isoMicros(date: Date): string {
   return date.toISOString().replace(/\.(\d{3})Z$/, ".$1000Z");
+}
+
+const MAX_BODY = 64_000;
+
+/** Read at most `limit` bytes of the body, stopping early; null when it is larger (Content-Length or streamed). */
+async function readBounded(request: Request, limit: number): Promise<string | null> {
+  if (Number(request.headers.get("Content-Length") ?? 0) > limit) return null;
+  if (!request.body) return "";
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > limit) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  const all = new Uint8Array(size);
+  let at = 0;
+  for (const c of chunks) {
+    all.set(c, at);
+    at += c.byteLength;
+  }
+  return new TextDecoder().decode(all);
 }
 
 async function readJson(request: Request): Promise<Record<string, unknown>> {

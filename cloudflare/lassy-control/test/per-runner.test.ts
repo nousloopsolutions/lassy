@@ -72,4 +72,38 @@ describe("per-runner secrets", () => {
       }
     }
   });
+
+  it("non-string runner_id gets a 400 before any secret lookup", async () => {
+    for (const rid of ['{"toString":null}', "7", "null", "[]", "true"]) {
+      const r = await exports.default.fetch("https://example.test/runner/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: `{"runner_id":${rid}}`,
+      });
+      expect(r.status).toBe(400);
+    }
+  });
+
+  it("oversized bodies are refused before parsing, with or without Content-Length", async () => {
+    const big = JSON.stringify({ runner_id: "bigg-legion", pad: "x".repeat(70_000) });
+    const r = await exports.default.fetch("https://example.test/runner/claim", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: big,
+    });
+    expect(r.status).toBe(413);
+    const stream = new ReadableStream({
+      start(c) {
+        c.enqueue(new TextEncoder().encode(big));
+        c.close();
+      },
+    });
+    const s = await exports.default.fetch("https://example.test/runner/result", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: stream,
+      duplex: "half",
+    } as RequestInit);
+    expect(s.status).toBe(413);
+  });
 });
