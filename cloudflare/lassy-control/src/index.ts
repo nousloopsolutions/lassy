@@ -243,12 +243,16 @@ export default {
       // Per-runner secrets: the runner_id in the body picks the secret, so one runner's secret can't claim
       // or finish another runner's jobs. Runners without their own secret keep the shared one until migrated.
       const raw = await request.text();
-      let body: Record<string, unknown>;
+      let parsed: unknown;
       try {
-        body = JSON.parse(raw || "{}") as Record<string, unknown>;
+        parsed = JSON.parse(raw || "{}");
       } catch {
         return json({ error: "invalid_json" }, 400);
       }
+      if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return json({ error: "invalid_json" }, 400);
+      }
+      const body = parsed as Record<string, unknown>;
       const secret = runnerSecret(env, String(body.runner_id ?? ""));
       if (!secret || !authorized(request.headers.get("Authorization"), secret, true)) {
         return json({ error: "unauthorized" }, 401);

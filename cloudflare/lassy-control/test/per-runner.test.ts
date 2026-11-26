@@ -59,4 +59,17 @@ describe("per-runner secrets", () => {
     });
     expect(r.status).toBe(401);
   });
+
+  it("non-object bodies get a 400, not an exception", async () => {
+    for (const path of ["/runner/claim", "/runner/result"]) {
+      for (const body of ["null", "[]", "7", "\"x\"", "{bad"]) {
+        const r = await exports.default.fetch(`https://example.test${path}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${LEGION}` },
+          body,
+        });
+        expect(r.status).toBe(400);
+      }
+    }
+  });
 });
