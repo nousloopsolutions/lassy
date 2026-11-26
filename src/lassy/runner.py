@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import json
+import ssl
 import time
 from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
+import truststore
 
 from lassy.audit import AuditLog
 from lassy.executor import JobExecutor
@@ -39,7 +41,10 @@ class Runner:
         self.seen_path = data_dir / "seen-jobs.json"
         self.pending_result_path = data_dir / "pending-result.json"
         self.seen_path.parent.mkdir(parents=True, exist_ok=True)
-        self.client = client or httpx.Client(timeout=30)
+        self.client = client or httpx.Client(
+            timeout=30,
+            verify=truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT),
+        )
 
     def run_once(self) -> bool:
         if self._flush_pending_result():
@@ -102,11 +107,34 @@ class Runner:
         self.pending_result_path.unlink()
         return True
 
-    def run_forever(self, poll_seconds: float = 5.0) -> None:
+    def run_forever(
+        self,
+        poll_seconds: float = 5.0,
+        max_backoff_seconds: float = 60.0,
+    ) -> None:
+        transient_failures = 0
         while True:
-            worked = self.run_once()
-            if not worked:
-                time.sleep(poll_seconds)
+            try:
+                worked = self.run_once()
+                transient_failures = 0
+                if not worked:
+                    time.sleep(poll_seconds)
+            except (httpx.HTTPError, json.JSONDecodeError, OSError) as exc:
+                transient_failures += 1
+                retry_seconds = min(
+                    max(poll_seconds, 1.0) * (2 ** min(transient_failures - 1, 6)),
+                    max_backoff_seconds,
+                )
+                self.audit.append(
+                    {
+                        "event": "runner_poll_error",
+                        "timestamp": datetime.now(UTC).isoformat(),
+                        "error_type": type(exc).__name__,
+                        "error": str(exc)[:300],
+                        "retry_in_seconds": retry_seconds,
+                    }
+                )
+                time.sleep(retry_seconds)
 
     def _seen(self) -> set[str]:
         if not self.seen_path.exists():

@@ -44,6 +44,12 @@ def test_expired_job_is_rejected() -> None:
         job.verify(SECRET, now=now)
 
 
+def test_small_control_plane_clock_skew_is_accepted() -> None:
+    now = datetime.now(UTC)
+    job = signed_job(issued_at=now + timedelta(seconds=2), expires_at=now + timedelta(minutes=5))
+    job.verify(SECRET, now=now)
+
+
 def test_non_health_job_requires_workspace() -> None:
     job = signed_job(workspace=None)
     with pytest.raises(ValueError, match="registered workspace"):
