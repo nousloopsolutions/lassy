@@ -22,7 +22,7 @@ LASSY is local-first. Your prompts, files and models stay on your machine. Nothi
 
 ## Contributing and security
 
-Ideas and questions are welcome as issues. To report a security problem, contact the maintainers privately through GitHub (@nousloopsolutions) rather than opening a public issue.
+Ideas and questions are welcome as issues. To report a security problem, use **Report a vulnerability** on this repository's Security tab, which opens a private advisory only the maintainers can see. Please don't open a public issue for it.
 
 ## License
 
